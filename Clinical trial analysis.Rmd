@@ -1,0 +1,116 @@
+---
+title: "Simulated Medical Trial Testing"
+author: "Preeti Agrawal"
+date: "2024-12-27"
+output: html_document
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(broom)
+
+
+```
+
+# **Introduction**
+
+This project evaluates the effectiveness of three drug groups: Paracetamol, Paracetamol+Codeine, and Paracetamol+Caffeine, in treating post-traumatic acute pain. The analysis will test hypotheses about differences in pain reduction and patient satisfaction among the groups.
+
+```{r load-data}
+# loading the dataset
+clinical_data <- read.csv("Simulated_Data_Clinical_Trial.csv")
+head(clinical_data)
+
+```
+
+```{r summary-stats}
+# Overview of the dataset
+summary(clinical_data)
+
+glimpse(clinical_data)
+
+# Check for missing values
+sum(is.na(clinical_data))
+
+```
+
+```{r group-distribution}
+# Distribution of patients across groups
+clinical_data %>% 
+  ggplot(aes(x = Group)) +
+  geom_bar(fill = "skyblue") +
+  labs(title = "Distribution of Patients by Group", x = "Group", y = "Count") +
+  theme_minimal()
+
+```
+
+### Exploring Pain Levels
+
+```{r pain-levels}
+# Boxplot for VAS scores at admission and discharge
+clinical_data %>% 
+  ggplot(aes(x = Group, y = VAS_Admission, fill = Group)) +
+  geom_boxplot() +
+  labs(title = "VAS Admission Scores by Group", x = "Group", y = "VAS Admission") +
+  theme_minimal()
+
+clinical_data %>% 
+  ggplot(aes(x = Group, y = VAS_Discharge, fill = Group)) +
+  geom_boxplot() +
+  labs(title = "VAS Discharge Scores by Group", x = "Group", y = "VAS Discharge") +
+  theme_minimal()
+
+```
+
+## Methodology
+
+We aim to compare the effectiveness of the three drug groups in reducing pain.
+
+-   **Testing Method**: ANOVA (Analysis of Variance) is used to evaluate if there are statistically significant differences in VAS scores among the groups.
+    -   **Why ANOVA**: Since we are comparing more than two groups, ANOVA is appropriate to test mean differences.
+
+## Analysis
+
+### Checking Assumptions
+
+```{r assumptions}
+# Check for normality
+shapiro.test(clinical_data$VAS_Discharge[clinical_data$Group == "Paracetamol"])
+shapiro.test(clinical_data$VAS_Discharge[clinical_data$Group == "Paracetamol_Codeine"])
+shapiro.test(clinical_data$VAS_Discharge[clinical_data$Group == "Paracetamol_Caffeine"])
+
+# Check for homogeneity of variances
+bartlett.test(VAS_Discharge ~ Group, data = clinical_data)
+
+```
+
+With the assumptions of normality and homogeneity of variances satisfied, an **ANOVA test** is appropriate for comparing the means of the VAS_Discharge variable across the three groups.
+
+### ANOVA Test
+
+```{r anova-test}
+# Perform ANOVA
+anova_results <- aov(VAS_Discharge ~ Group, data = clinical_data)
+summary(anova_results)
+
+# Tukey's HSD post-hoc test
+TukeyHSD(anova_results)
+```
+
+### **Key Findings**
+
+-   **Paracetamol+Codeine** is significantly more effective in reducing pain (lower VAS_Discharge) compared to **Paracetamol**.
+
+-   There is no significant difference in pain relief between **Paracetamol+Caffeine** and the other two groups.
+
+### **Recommendations**
+
+1.  Consider **Paracetamol+Codeine** as a potentially more effective treatment for post-traumatic acute pain, particularly when compared to Paracetamol alone.
+
+2.  Further studies with larger sample sizes could provide more conclusive evidence, especially for comparisons involving **Paracetamol+Caffeine**.
+
+3.  Evaluate side effects and patient satisfaction alongside pain relief to make holistic treatment decisions.
